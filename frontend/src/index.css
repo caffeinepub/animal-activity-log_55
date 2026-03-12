@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --radius: 0.625rem;
+        --background: 0.98 0 0;
+        --foreground: 0.15 0 0;
+        --card: 1 0 0;
+        --card-foreground: 0.15 0 0;
+        --popover: 1 0 0;
+        --popover-foreground: 0.15 0 0;
+        --primary: 0.45 0.15 145;
+        --primary-foreground: 0.98 0 0;
+        --secondary: 0.92 0.05 145;
+        --secondary-foreground: 0.15 0 0;
+        --muted: 0.95 0 0;
+        --muted-foreground: 0.50 0 0;
+        --accent: 0.92 0.05 145;
+        --accent-foreground: 0.15 0 0;
+        --destructive: 0.55 0.22 25;
+        --destructive-foreground: 0.98 0 0;
+        --border: 0.90 0 0;
+        --input: 0.90 0 0;
+        --ring: 0.45 0.15 145;
+        --chart-1: 0.60 0.20 145;
+        --chart-2: 0.55 0.18 200;
+        --chart-3: 0.50 0.15 280;
+        --chart-4: 0.65 0.18 90;
+        --chart-5: 0.70 0.16 50;
+        --sidebar: 0.98 0 0;
+        --sidebar-foreground: 0.15 0 0;
+        --sidebar-primary: 0.45 0.15 145;
+        --sidebar-primary-foreground: 0.98 0 0;
+        --sidebar-accent: 0.95 0 0;
+        --sidebar-accent-foreground: 0.15 0 0;
+        --sidebar-border: 0.90 0 0;
+        --sidebar-ring: 0.70 0 0;
+    }
+
+    .dark {
+        --background: 0.12 0 0;
+        --foreground: 0.95 0 0;
+        --card: 0.18 0 0;
+        --card-foreground: 0.95 0 0;
+        --popover: 0.20 0 0;
+        --popover-foreground: 0.95 0 0;
+        --primary: 0.65 0.18 145;
+        --primary-foreground: 0.12 0 0;
+        --secondary: 0.25 0.05 145;
+        --secondary-foreground: 0.95 0 0;
+        --muted: 0.25 0 0;
+        --muted-foreground: 0.65 0 0;
+        --accent: 0.30 0.08 145;
+        --accent-foreground: 0.95 0 0;
+        --destructive: 0.60 0.20 25;
+        --destructive-foreground: 0.95 0 0;
+        --border: 0.30 0 0;
+        --input: 0.30 0 0;
+        --ring: 0.55 0.15 145;
+        --chart-1: 0.55 0.20 145;
+        --chart-2: 0.60 0.18 200;
+        --chart-3: 0.65 0.16 280;
+        --chart-4: 0.70 0.18 90;
+        --chart-5: 0.75 0.16 50;
+        --sidebar: 0.18 0 0;
+        --sidebar-foreground: 0.95 0 0;
+        --sidebar-primary: 0.65 0.18 145;
+        --sidebar-primary-foreground: 0.95 0 0;
+        --sidebar-accent: 0.25 0 0;
+        --sidebar-accent-foreground: 0.95 0 0;
+        --sidebar-border: 0.30 0 0;
+        --sidebar-ring: 0.45 0 0;
+    }
+
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-background text-foreground;
+    }
+}
+
+/* Safe area support for iOS devices with notches */
+@layer utilities {
+    /* Safe area insets for full-screen layouts */
+    .safe-area-inset {
+        padding-top: env(safe-area-inset-top);
+        padding-right: env(safe-area-inset-right);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+    }
+
+    /* Safe area for layout container */
+    .safe-area-layout {
+        padding-top: env(safe-area-inset-top);
+    }
+
+    /* Safe area for header - adds top padding to avoid status bar */
+    .safe-area-header {
+        padding-top: env(safe-area-inset-top);
+    }
+
+    /* Individual safe area utilities */
+    .pt-safe {
+        padding-top: max(1rem, env(safe-area-inset-top));
+    }
+
+    .pb-safe {
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+
+    .pl-safe {
+        padding-left: env(safe-area-inset-left);
+    }
+
+    .pr-safe {
+        padding-right: env(safe-area-inset-right);
+    }
+
+    /* Margin safe area utilities */
+    .mt-safe {
+        margin-top: env(safe-area-inset-top);
+    }
+
+    .mb-safe {
+        margin-bottom: env(safe-area-inset-bottom);
+    }
+
+    .ml-safe {
+        margin-left: env(safe-area-inset-left);
+    }
+
+    .mr-safe {
+        margin-right: env(safe-area-inset-right);
+    }
+}
+
+/* Custom breakpoint for extra small screens */
+@media (min-width: 375px) {
+    .xs\:inline {
+        display: inline;
+    }
+    .xs\:hidden {
+        display: none;
+    }
+}

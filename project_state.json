@@ -1,0 +1,414 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 39,
+  "summary": "Animal Activity Log is a React + TypeScript progressive web app for tracking a ball python collection. Authenticated users (via Internet Identity on the Internet Computer) can manage animals and log activities including meals, weights, pairings, clutches, and maintenance (shed + tub change). The backend is a Motoko canister (BallPythonTracker) that stores per-user data keyed by caller principal with role-based access control, and supports image/logo blob storage via an ExternalBlob integration. The frontend uses TanStack Router for navigation, TanStack React Query for data fetching/mutations with retries/caching, provides offline/PWA affordances (manifest, service worker, install prompt, offline indicator), and includes printable reports for individual animal details.",
+  "architectural_notes": [
+    "Internet Computer architecture: Motoko canister backend (actor BallPythonTracker) with Internet Identity authentication from the frontend.",
+    "Role-based authorization layer (authorization/access-control.mo): first initializer becomes admin, subsequent users become user; anonymous callers treated as guest; permission checks gate all user data operations.",
+    "Per-principal multi-tenant storage model in backend: OrderedMap<Principal, Map<Id, Entity>> for animals, meals, weights, pairings, sheds, tub changes, profiles, headings, water changes, logos, etc.",
+    "Frontend data layer uses @tanstack/react-query with centralized hooks (useQueries.ts) wrapping backend actor calls; mutations invalidate relevant query keys.",
+    "Actor creation pattern (useActor): creates anonymous or authenticated actor; on authenticated actor creation it calls initializeAccessControl and then invalidates/refetches dependent queries.",
+    "UI stack: React + shadcn/ui components + TailwindCSS (OKLCH token-based theming) + next-themes for dark/light mode.",
+    "PWA support: web manifest, install prompt, offline indicator, and a custom service worker implementing app-shell precaching and runtime caching (stale-while-revalidate) with cache-bypass for canister/identity traffic.",
+    "Client-side cache persistence: App.tsx persists React Query cache data into localStorage with a max-age policy and debounced writes.",
+    "Printing implemented client-side by opening a new window and generating an HTML report (PrintSnakeDetails) with print-specific CSS.",
+    "Blob storage integration present in backend (blob-storage Storage.mo + Mixin.mo) and used in frontend for uploading animal pictures as ExternalBlob bytes."
+  ],
+  "known_issues": [
+    "State persistence on canister upgrade is not implemented: backend uses plain `var` fields (not `stable var`) and no preupgrade/postupgrade hooks, so all tracked data will be lost on canister upgrade.",
+    "Animal IDs are derived as `name # \"-\" # genes`, which is not guaranteed unique; collisions can overwrite animals, and renaming/regenotyping does not change the ID (editAnimal keeps same id), which can lead to confusing identity semantics.",
+    "deleteAnimal only removes the animal record; associated meals/weights/pairings/clutch entries/shed/tub changes are not deleted, leaving orphaned activity records.",
+    "RecordClutchDialog computes a user-selected date/timestamp but the backend `recordClutch` ignores it and always uses `Time.now()`; users cannot actually set the clutch entry date from the UI as written.",
+    "Current animal.weight is not updated when adding/editing/deleting individual weight entries (addWeightEntry/editWeightEntry); only bulk weight updates and editAnimal modify the Animal.weight field, so “current weight” can drift from latest weight history.",
+    "The custom React Query cache persistence attempts to JSON.stringify query state; any BigInt-containing data will fail serialization (caught and logged), so persistence may be incomplete/unreliable.",
+    "Service worker offline page messaging claims the app “requires an internet connection” even though the app caches UI; also no real background-sync implementation exists despite a `sync` handler stub.",
+    "Backend does not validate many inputs (e.g., negative/empty strings at canister boundary, ID-number uniqueness), relying on frontend validation only.",
+    "Backend includes both `ClutchRecord` (breeding record with dam/sire/egg counts) and per-animal `ClutchEntry` (notes/timestamp). The dual models increase complexity and may confuse UI/data usage if both are surfaced.",
+    "Bulk weight update uses `Time.now()` for entries rather than user-selected dates; this may be a functional limitation depending on expected workflow."
+  ],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "IF-1",
+      "title": "Internet Identity authentication and session management",
+      "synonyms": [
+        "II login",
+        "DFINITY auth"
+      ],
+      "description": "Users authenticate via Internet Identity using @dfinity/auth-client. The app loads any stored delegation on startup, supports login/logout, and exposes identity and login status through a React context hook (useInternetIdentity).",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-2",
+      "title": "Automatic access control initialization and role retrieval",
+      "synonyms": [
+        "RBAC init",
+        "initializeAccessControl"
+      ],
+      "description": "Backend enforces roles (admin/user/guest). Frontend creates an authenticated actor and calls initializeAccessControl; App.tsx also auto-initializes when userRole is guest, then invalidates dependent queries. User role can be queried via getCallerUserRole.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-3",
+      "title": "User profile setup and persistence",
+      "synonyms": [
+        "Onboarding profile",
+        "saveCallerUserProfile"
+      ],
+      "description": "Users can create and store a simple profile (name). The app detects missing profile and displays a ProfileSetup screen, then saves/reloads profile via React Query hooks.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-4",
+      "title": "Customizable app heading",
+      "synonyms": [
+        "Custom title",
+        "setCustomHeading"
+      ],
+      "description": "Users can read and update a per-user custom heading string stored in the backend. The AnimalList page supports inline editing and saving of this heading.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-5",
+      "title": "Animal management (CRUD) with optional image and metadata",
+      "synonyms": [
+        "Snake records",
+        "Animal CRUD"
+      ],
+      "description": "Users can add, edit, list, and delete animals with name, ID number, genes, sex, optional birthday, optional current weight, and optional picture stored as an ExternalBlob. UI provides dialogs for add/edit and displays animal cards with computed age.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-6",
+      "title": "Bulk add animals",
+      "synonyms": [
+        "BulkAddSnakes",
+        "Import animals"
+      ],
+      "description": "Users can add multiple animals in one operation via a bulk dialog. Each entry supports the same fields as single add, including optional picture upload. Backend supports addBulkSnakes.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-7",
+      "title": "Meal logging with history (CRUD)",
+      "synonyms": [
+        "Feeding log",
+        "Meal records"
+      ],
+      "description": "Users can add meals (with timestamp and details), view meal history per animal, edit meal details, and delete meals. UI includes AddMealDialog, MealList, and EditMealDialog.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-8",
+      "title": "Bulk add meals to selected animals",
+      "synonyms": [
+        "Batch feed",
+        "Bulk meals"
+      ],
+      "description": "Users can select multiple animals and add the same meal details with a selected date to all of them in one action. Backend supports addBulkMealsForSelectedAnimals.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-9",
+      "title": "Weight tracking with history (CRUD)",
+      "synonyms": [
+        "Weigh-ins",
+        "Weight entries"
+      ],
+      "description": "Users can add weight entries (weight + date), view weight history per animal, edit entries, and delete entries. UI includes AddWeightDialog, WeightList, and EditWeightDialog.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-10",
+      "title": "Bulk weight updates for selected animals",
+      "synonyms": [
+        "Batch weights",
+        "Bulk weigh"
+      ],
+      "description": "Users can select multiple animals and enter individual weight values for each, then submit a bulk update. Backend updates the animal’s current weight and appends weight history entries.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-11",
+      "title": "Pairing tracking with notes (CRUD)",
+      "synonyms": [
+        "Breeding pairings",
+        "Pairing entries"
+      ],
+      "description": "Users can add pairing entries with date and optional notes, view pairing history per animal, edit entries, and delete entries. UI includes AddPairingDialog, PairingList, and EditPairingDialog.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-12",
+      "title": "Clutch event tracking per animal (CRUD)",
+      "synonyms": [
+        "Clutch notes",
+        "recordClutch"
+      ],
+      "description": "Users can record clutch events tied to a specific animal (timestamp + notes), view clutch history per animal, edit entries, and delete entries. UI includes RecordClutchDialog, ClutchList, and EditClutchEntryDialog; backend supports recordClutch/editClutchEntry/deleteClutchEntry.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-13",
+      "title": "Shed and tub change maintenance tracking (log + history CRUD)",
+      "synonyms": [
+        "Maintenance log",
+        "Shed/Tub Change"
+      ],
+      "description": "Users can record a combined shed and tub change event (creates one ShedEntry and one TubChangeEntry with the same timestamp), view histories, edit timestamps, and delete entries. UI merges entries by timestamp for display and supports edit/delete workflows.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-14",
+      "title": "Days-since-last-event metrics for each animal",
+      "synonyms": [
+        "Activity recency",
+        "Days since"
+      ],
+      "description": "Backend computes days since last meal, pairing, shed, tub change, and clutch per animal. Animal cards display these as badges, and both list/overview pages consume the computed aggregate type.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-17",
+      "title": "Water change tracking",
+      "synonyms": [
+        "Last water change",
+        "updateWaterChange"
+      ],
+      "description": "Users can update and view the last water change timestamp. UI displays humanized days-since and provides an action button to update it.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-18",
+      "title": "Printable animal detail report",
+      "synonyms": [
+        "Print snake details",
+        "Report printing"
+      ],
+      "description": "Generates a printable HTML report in a new browser window including profile info and sorted histories for meals, weights, pairings, clutches, sheds, and tub changes, with print-optimized styling.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-19",
+      "title": "PWA installability and offline UX indicators",
+      "synonyms": [
+        "Install prompt",
+        "Offline banner"
+      ],
+      "description": "Includes a web manifest, an in-app install prompt (beforeinstallprompt handling with dismissal persistence), and an offline/online indicator banner reacting to connectivity events.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-20",
+      "title": "Service worker caching and offline fallback page",
+      "synonyms": [
+        "SW caching",
+        "App shell cache"
+      ],
+      "description": "Service worker precaches core assets, maintains runtime/offline caches, applies network-first for navigations with cache fallbacks (including offline page), and uses stale-while-revalidate for other same-origin assets while bypassing canister/identity traffic.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-21",
+      "title": "Enhanced React Query infrastructure (retries, stale times, invalidation)",
+      "synonyms": [
+        "Query hooks",
+        "Caching layer"
+      ],
+      "description": "Centralized query/mutation hooks implement consistent invalidation patterns, exponential backoff retry configuration, and tuned stale times. App config further increases cache lifetimes and disables some refetch triggers for performance.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-22",
+      "title": "Theme toggle (dark/light)",
+      "synonyms": [
+        "Dark mode",
+        "next-themes"
+      ],
+      "description": "Header includes a theme toggle using next-themes and Tailwind token-based theming to switch between light/dark modes.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-23",
+      "title": "Resilience features: error boundaries and global error handlers",
+      "synonyms": [
+        "Crash screen",
+        "Error recovery"
+      ],
+      "description": "App wraps key UI areas in an ErrorBoundary to show a friendly error screen with reload, and registers global error/unhandled-rejection listeners for logging and basic recovery flows.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-24",
+      "title": "Backend ExternalBlob / blob-storage maintenance mixin",
+      "synonyms": [
+        "Blob gateway auth",
+        "Storage mixin"
+      ],
+      "description": "Backend includes blob-storage modules for authorized gateway principal management, blob liveness checks, dead-blob pruning confirmation, and a certificate creation stub, enabling ExternalBlob usage for images/logos.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-25",
+      "title": "Breeding clutch record management (backend)",
+      "synonyms": [
+        "ClutchRecord CRUD",
+        "Dam/Sire clutch records"
+      ],
+      "description": "Backend supports structured clutch records with clutch number, dam/sire references, egg/hatch counts, slug count, dates, and outcome notes, including add/edit/delete and listing all clutch records for a user.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-15",
+      "title": "Animal list UI with local-only search and summary statistics",
+      "synonyms": [
+        "Collection view",
+        "Search animals"
+      ],
+      "description": "Main Animals page lists all animals as cards with collapsible activity sections, provides local UI search by name/ID/genes (not synced to URL), and clearing the search input restores the full list without any full app reload. Displays summary counts (total, male/female) and includes quick actions for bulk operations.",
+      "reqIds": [
+        "AR-1"
+      ],
+      "version": 2
+    },
+    {
+      "id": "IF-16",
+      "title": "Overview page table view (no animal search)",
+      "synonyms": [
+        "Schedule overview",
+        "Summary table"
+      ],
+      "description": "Provides a table view of all animals with their weight and days since last meal/pairing/shed/tub change, plus summary counts. Does not include an animal search bar and does not react to Animals page search state.",
+      "reqIds": [
+        "AR-1"
+      ],
+      "version": 2
+    },
+    {
+      "id": "IF-26",
+      "title": "Debounced local-only Animals page search",
+      "synonyms": [
+        "Debounced search",
+        "useDebouncedValue"
+      ],
+      "description": "Animals page client-side filtering now uses a small debounce so typing and clearing the local-only search input feels smoother without any reloads or URL synchronization.",
+      "reqIds": [
+        "AR-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-27",
+      "title": "Stabilized post-login initialization and routing/load flow",
+      "synonyms": [
+        "Post-auth init fix",
+        "Login spinner fix"
+      ],
+      "description": "Improves the authenticated startup sequence (actor creation/access-control initialization/profile/bootstrap query flow) to prevent the app from getting stuck on an infinite spinner after Internet Identity login, especially in draft builds.",
+      "reqIds": [
+        "AR-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-28",
+      "title": "Non-trapping backend user role lookup (returns guest when uninitialized)",
+      "synonyms": [
+        "Safe getCallerUserRole",
+        "Non-trapping RBAC role query"
+      ],
+      "description": "Backend role retrieval no longer traps/rejects for authenticated but uninitialized principals. Role lookup returns #guest when the caller has not been registered yet, enabling the frontend to treat guest as a valid pre-initialization state and proceed with idempotent initializeAccessControl.",
+      "reqIds": [
+        "AR-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-29",
+      "title": "Hardened startup bootstrap with timeout/recovery screen (pre-login and post-login)",
+      "synonyms": [
+        "Bootstrap timeout",
+        "Startup recovery UI",
+        "Deadlock prevention"
+      ],
+      "description": "Frontend startup/auth bootstrap is hardened so the login screen is never blocked by role/profile queries. Includes explicit initialization state handling and a recoverable timeout/error screen (with retry) to prevent infinite spinners in browser and PWA/service-worker contexts.",
+      "reqIds": [
+        "AR-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-30",
+      "title": "Automatic recovery for unregistered principals after login (role bootstrap auto-repair)",
+      "synonyms": [
+        "User is not registered fix",
+        "Post-login role recovery",
+        "Auto re-registration"
+      ],
+      "description": "Fixes the blocking post-login error \"Error Loading User Role – User is not registered\" for previously working Internet Identity accounts by adding a safe backend recovery/auto-(re)registration path and corresponding frontend recovery UI/logic so authenticated users can proceed without an infinite spinner or retry loop.",
+      "reqIds": [
+        "AR-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-on-the-animal-detail-card-ui-the-animalcard-shown-per-animal-replace-the-single-combined-shed-tub-change-action-with-two-independent-buttons-displayed-side-by-side-in-the-same-button-grid-section-one-for-logging-a-shed-event-and-one-for-logging-a-tub-change-event-each-button-must-be-clickable-independently-so-the-user-can-record-either-event-or-both-when-they-occur-at-different-times",
+      "title": "On the animal detail card UI (the AnimalCard shown per animal), replace the single combined \"Shed & Tub Change\" action with two independent buttons displayed side-by-side in the same button grid section: one for logging a Shed event and one for logging a Tub Change event. Each button must be clickable independently so the user can record either event or both when they occur at different times.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-or-wire-up-dedicated-mutations-for-logging-a-shed-event-and-logging-a-tub-change-event-from-the-frontend-if-the-backend-does-not-already-expose-single-action-endpoints-add-backend-methods-to-record-shed-only-and-tub-change-only-events-for-a-given-animal-id-using-the-current-time-and-expose-them-in-the-frontend-actor-react-query-hooks",
+      "title": "Add or wire up dedicated mutations for logging a Shed event and logging a Tub Change event from the frontend. If the backend does not already expose single-action endpoints, add backend methods to record shed-only and tub-change-only events for a given animal ID using the current time, and expose them in the frontend actor + React Query hooks.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-shed-tub-change-history-ui-to-correctly-reflect-entries-that-may-be-shed-only-tub-change-only-or-both-specifically-adjust-the-list-item-label-and-delete-edit-dialog-copy-so-it-does-not-always-say-shed-tub-change-when-only-one-of-the-two-event-types-exists-for-that-timestamp-grouping",
+      "title": "Update the Shed/Tub Change history UI to correctly reflect entries that may be shed-only, tub-change-only, or both. Specifically, adjust the list item label and delete/edit dialog copy so it does not always say \"Shed & Tub Change\" when only one of the two event types exists for that timestamp grouping.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-7",
+      "summary": "Separate Shed and Tub Change into two independent side-by-side buttons on the animal detail page only (no bulk actions change)",
+      "reqIds": [],
+      "status": "in_progress"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "Animal Activity Log",
+  "clarification_mode": "pro",
+  "clarification_rounds": 0
+}

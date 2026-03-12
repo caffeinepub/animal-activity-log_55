@@ -1,0 +1,67 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-on-the-animal-detail-card-ui-the-animalcard-shown-per-animal-replace-the-single-combined-shed-tub-change-action-with-two-independent-buttons-displayed-side-by-side-in-the-same-button-grid-section-one-for-logging-a-shed-event-and-one-for-logging-a-tub-change-event-each-button-must-be-clickable-independently-so-the-user-can-record-either-event-or-both-when-they-occur-at-different-times",
+      "featureTitle": "On the animal detail card UI (the AnimalCard shown per animal), replace the single combined \"Shed & Tub Change\" action with two independent buttons displayed side-by-side in the same button grid section: one for logging a Shed event and one for logging a Tub Change event. Each button must be clickable independently so the user can record either event or both when they occur at different times.",
+      "files": [
+        "frontend/src/components/AnimalCard.tsx"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@2.0.3",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-or-wire-up-dedicated-mutations-for-logging-a-shed-event-and-logging-a-tub-change-event-from-the-frontend-if-the-backend-does-not-already-expose-single-action-endpoints-add-backend-methods-to-record-shed-only-and-tub-change-only-events-for-a-given-animal-id-using-the-current-time-and-expose-them-in-the-frontend-actor-react-query-hooks",
+      "featureTitle": "Add or wire up dedicated mutations for logging a Shed event and logging a Tub Change event from the frontend. If the backend does not already expose single-action endpoints, add backend methods to record shed-only and tub-change-only events for a given animal ID using the current time, and expose them in the frontend actor + React Query hooks.",
+      "files": [
+        "frontend/src/components/AnimalCard.tsx",
+        "frontend/src/hooks/useQueries.ts"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@2.0.3",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-shed-tub-change-history-ui-to-correctly-reflect-entries-that-may-be-shed-only-tub-change-only-or-both-specifically-adjust-the-list-item-label-and-delete-edit-dialog-copy-so-it-does-not-always-say-shed-tub-change-when-only-one-of-the-two-event-types-exists-for-that-timestamp-grouping",
+      "featureTitle": "Update the Shed/Tub Change history UI to correctly reflect entries that may be shed-only, tub-change-only, or both. Specifically, adjust the list item label and delete/edit dialog copy so it does not always say \"Shed & Tub Change\" when only one of the two event types exists for that timestamp grouping.",
+      "files": [
+        "frontend/src/components/EditShedTubChangeDialog.tsx",
+        "frontend/src/components/ShedTubChangeList.tsx"
+      ],
+      "components": [
+        "authorization@1.0.1",
+        "blob-storage@2.0.3",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

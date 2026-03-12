@@ -1,0 +1,72 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-09T16:48:20.991Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 3,
+    "implemented": 3,
+    "items": [
+      {
+        "id": "REQ-1",
+        "summary": "On the animal detail card UI (the AnimalCard shown per animal), replace the single combined \"Shed & Tub Change\" action with two independent buttons displayed side-by-side in the same button grid section: one for logging a Shed event and one for logging a Tub Change event. Each button must be clickable independently so the user can record either event or both when they occur at different times.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/AnimalCard.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/AnimalCard.tsx"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Add or wire up dedicated mutations for logging a Shed event and logging a Tub Change event from the frontend. If the backend does not already expose single-action endpoints, add backend methods to record shed-only and tub-change-only events for a given animal ID using the current time, and expose them in the frontend actor + React Query hooks.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/AnimalCard.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/AnimalCard.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Update the Shed/Tub Change history UI to correctly reflect entries that may be shed-only, tub-change-only, or both. Specifically, adjust the list item label and delete/edit dialog copy so it does not always say \"Shed & Tub Change\" when only one of the two event types exists for that timestamp grouping.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/ShedTubChangeList.tsx",
+          "frontend/src/components/EditShedTubChangeDialog.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/ShedTubChangeList.tsx",
+          "frontend/src/components/EditShedTubChangeDialog.tsx"
+        ]
+      }
+    ]
+  },
+  "changedFiles": [
+    "backend/main.mo",
+    "build-request.json",
+    "caffeine.lock.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/AnimalCard.tsx",
+    "frontend/src/components/EditShedTubChangeDialog.tsx",
+    "frontend/src/components/ShedTubChangeList.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useQueries.ts",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}

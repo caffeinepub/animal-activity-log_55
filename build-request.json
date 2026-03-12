@@ -1,0 +1,93 @@
+{
+  "kind": "build_request",
+  "title": "Separate Shed and Tub Change into independent buttons on animal detail cards",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "On the animal detail card UI (the AnimalCard shown per animal), replace the single combined \"Shed & Tub Change\" action with two independent buttons displayed side-by-side in the same button grid section: one for logging a Shed event and one for logging a Tub Change event. Each button must be clickable independently so the user can record either event or both when they occur at different times.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "recent-messages"
+        ],
+        "quotes": [
+          "Can you separate the tub change button and shed button so I can hit either one or both of it’s not at the same time?",
+          "The animal detail page only I don’t need this in bulk actions.",
+          "2 independent buttons each logging their own event",
+          "Have them sit side by side in the same section",
+          "Proceed"
+        ]
+      },
+      "acceptanceCriteria": [
+        "In AnimalCard, the combined \"Shed & Tub Change\" button is removed and replaced by two buttons labeled clearly (e.g., \"Log Shed\" and \"Log Tub Change\") displayed side-by-side in the same actions area.",
+        "Clicking \"Log Shed\" creates only a shed record for that animal; clicking \"Log Tub Change\" creates only a tub change record for that animal.",
+        "Both buttons show appropriate loading/disabled state while their respective mutation is pending and show success/error toast messages that match the action taken.",
+        "No changes are made to bulk actions dialogs or their UI."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Add or wire up dedicated mutations for logging a Shed event and logging a Tub Change event from the frontend. If the backend does not already expose single-action endpoints, add backend methods to record shed-only and tub-change-only events for a given animal ID using the current time, and expose them in the frontend actor + React Query hooks.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "recent-messages"
+        ],
+        "quotes": [
+          "2 independent buttons each logging their own event",
+          "Proceed"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Frontend has two separate mutation hooks usable by AnimalCard: one that logs shed-only and one that logs tub-change-only.",
+        "Triggering either mutation invalidates/refetches the relevant per-animal history queries and the derived \"animalsWithEvents\"/days-since metrics so UI badges and history update after logging.",
+        "Backend methods (if added) enforce the same access control rules as existing animal event logging and do not affect other event types.",
+        "Existing combined logging functionality (if currently used elsewhere) continues to work or is cleanly replaced without breaking other screens."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Update the Shed/Tub Change history UI to correctly reflect entries that may be shed-only, tub-change-only, or both. Specifically, adjust the list item label and delete/edit dialog copy so it does not always say \"Shed & Tub Change\" when only one of the two event types exists for that timestamp grouping.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "recent-messages"
+        ],
+        "quotes": [
+          "separate the tub change button and shed button so I can hit either one or both"
+        ]
+      },
+      "acceptanceCriteria": [
+        "In the ShedTubChangeList, each rendered history row indicates what is present for that row (Shed only, Tub Change only, or Shed & Tub Change).",
+        "Delete confirmation text and success/error toasts reflect what is being deleted (shed, tub change, or both) based on the combined entry contents.",
+        "Edit dialog title/description similarly reflects whether the user is editing a shed date, a tub change date, or both, while still allowing editing of whichever records exist in that combined entry."
+      ]
+    }
+  ],
+  "constraints": [
+    "Use English for all user-facing text.",
+    "Do not modify bulk action workflows; changes apply only to the animal detail card/page UI.",
+    "Do not edit files under frontend/src/components/ui or any other immutable paths listed in SYSTEM_CONTEXT.",
+    "Backend must remain single-actor (all Motoko logic in backend/main.mo); add migration.mo only if state schema changes require it."
+  ],
+  "nonGoals": [
+    "Fixing or changing the Safari TLS/HTTPS connection issue shown in the uploaded screenshot.",
+    "Changing how shed/tub entries are stored historically beyond what is required to support separate logging.",
+    "Adding new bulk logging actions for shed or tub change."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
+  }
+}

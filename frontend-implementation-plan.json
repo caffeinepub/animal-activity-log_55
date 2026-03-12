@@ -1,0 +1,67 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Split Shed and Tub Change logging into separate actions on AnimalCard and reflect in history UI",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "summary": "Replace the combined \"Shed & Tub Change\" action on AnimalCard with two independent side-by-side buttons for logging Shed and Tub Change separately, with independent pending states and toasts.",
+      "acceptanceCriteria": [
+        "In AnimalCard, the combined \"Shed & Tub Change\" button is removed and replaced by two buttons labeled clearly (e.g., \"Log Shed\" and \"Log Tub Change\") displayed side-by-side in the same actions area.",
+        "Clicking \"Log Shed\" creates only a shed record for that animal; clicking \"Log Tub Change\" creates only a tub change record for that animal.",
+        "Both buttons show appropriate loading/disabled state while their respective mutation is pending and show success/error toast messages that match the action taken.",
+        "No changes are made to bulk actions dialogs or their UI."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/AnimalCard.tsx",
+          "operation": "modify",
+          "description": "Replace the single \"Shed & Tub Change\" button with two separate buttons (\"Log Shed\" and \"Log Tub Change\") rendered side-by-side within the existing actions grid; wire each to its own mutation, use independent disabled/loading labels, and show action-specific success/error toasts. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Add dedicated frontend mutation hooks for shed-only and tub-change-only logging and ensure related queries/metrics are invalidated so the UI updates after logging.",
+      "acceptanceCriteria": [
+        "Frontend has two separate mutation hooks usable by AnimalCard: one that logs shed-only and one that logs tub-change-only.",
+        "Triggering either mutation invalidates/refetches the relevant per-animal history queries and the derived \"animalsWithEvents\"/days-since metrics so UI badges and history update after logging.",
+        "Backend methods (if added) enforce the same access control rules as existing animal event logging and do not affect other event types.",
+        "Existing combined logging functionality (if currently used elsewhere) continues to work or is cleanly replaced without breaking other screens."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add/wire React Query mutations for shed-only and tub-change-only logging using the existing backend actor capabilities (logShedOnly, logTubChangeOnly); ensure onSuccess invalidates per-animal shed/tub history queries and global derived metrics queries (including animalsWithEvents) so AnimalCard badges and ShedTubChangeList update. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/AnimalCard.tsx",
+          "operation": "modify",
+          "description": "Update imports/usage to consume the new useLogShedOnly and useLogTubChangeOnly mutation hooks (and remove reliance on the combined mutation for the AnimalCard UI). Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Adjust Shed/Tub Change history row labels and edit/delete dialog copy to reflect whether the combined entry contains shed-only, tub-change-only, or both.",
+      "acceptanceCriteria": [
+        "In the ShedTubChangeList, each rendered history row indicates what is present for that row (Shed only, Tub Change only, or Shed & Tub Change).",
+        "Delete confirmation text and success/error toasts reflect what is being deleted (shed, tub change, or both) based on the combined entry contents.",
+        "Edit dialog title/description similarly reflects whether the user is editing a shed date, a tub change date, or both, while still allowing editing of whichever records exist in that combined entry."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/ShedTubChangeList.tsx",
+          "operation": "modify",
+          "description": "Compute a per-row label based on whether shedEntry and/or tubChangeEntry exist, and render the correct label (\"Shed\", \"Tub Change\", or \"Shed & Tub Change\"); update delete confirmation title/description and delete success/error toasts to match the entry contents. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/EditShedTubChangeDialog.tsx",
+          "operation": "modify",
+          "description": "Update the dialog title/description and success/error toasts to reflect whether the user is editing Shed only, Tub Change only, or both (while still updating whichever record(s) exist). Verify the component's usage instructions before implementing."
+        }
+      ]
+    }
+  ]
+}

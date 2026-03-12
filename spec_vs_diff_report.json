@@ -1,0 +1,98 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-09T16:48:20.986Z",
+  "summary": "Animal detail UI appears updated to support shed-only and tub-change-only actions, and the Shed/Tub Change history UI now labels/edit/delete copy based on which entry types exist. However, the diff summary does not provide clear evidence that the backend exposes new dedicated shed-only/tub-change-only methods (or that existing combined logging remains intact), and several unrelated UI/UX changes appear to have been introduced outside the requested animal detail scope.",
+  "missing_requirements": [
+    {
+      "id": "REQ-2",
+      "requirement": "Backend exposes dedicated single-action endpoints to record shed-only and tub-change-only events (with existing access control), and frontend actor + hooks wire to those methods.",
+      "reason": "The diff shows new frontend hooks being used (useLogShedOnly/useLogTubChangeOnly), but the backend/main.mo section is truncated and does not show any new public methods for shed-only or tub-change-only logging or their access-control enforcement.",
+      "evidence": [
+        "backend/main.mo (truncated)",
+        "frontend/src/hooks/useQueries.ts (truncated)",
+        "frontend/src/components/AnimalCard.tsx (uses useLogShedOnly/useLogTubChangeOnly)"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Triggering either mutation invalidates/refetches relevant per-animal history queries and derived animalsWithEvents/days-since metrics.",
+      "reason": "useQueries.ts is truncated before the shed/tub mutations are shown; no explicit invalidateQueries calls for shed/tub histories or animalsWithEvents/days-since metrics are visible in the provided diff excerpt.",
+      "evidence": [
+        "frontend/src/hooks/useQueries.ts (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Existing combined logging functionality continues to work or is cleanly replaced without breaking other screens.",
+      "reason": "No evidence is shown for the previous combined \"Shed & Tub Change\" logging method(s) being retained or updated, either in frontend hooks or backend actor methods, due to truncation and lack of visible references.",
+      "evidence": [
+        "backend/main.mo (truncated)",
+        "frontend/src/hooks/useQueries.ts (truncated)"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Access-control bootstrap/recovery flow changes in App.tsx (RoleLoadingRecoveryScreen, query clearing, re-initialization without reload).",
+      "reason": "BuildRequest constrained changes to the animal detail card/page UI only; this is an application bootstrap/auth flow change outside that scope.",
+      "evidence": [
+        "frontend-file-summaries.txt (App.tsx description)"
+      ]
+    },
+    {
+      "description": "Header navigation changes (Animals/Overview only) plus theme toggle/logout responsive redesign.",
+      "reason": "Not requested; outside animal detail card/page UI scope.",
+      "evidence": [
+        "frontend-file-summaries.txt (Header.tsx description)"
+      ]
+    },
+    {
+      "description": "Footer attribution/link changes.",
+      "reason": "Not requested; outside animal detail card/page UI scope.",
+      "evidence": [
+        "frontend-file-summaries.txt (Footer.tsx description)"
+      ]
+    },
+    {
+      "description": "AnimalList debounced client-side search behavior changes and Enter key suppression.",
+      "reason": "Not requested; outside animal detail card/page UI scope.",
+      "evidence": [
+        "frontend-file-summaries.txt (AnimalList.tsx description)"
+      ]
+    },
+    {
+      "description": "Global CSS changes: OKLCH color system, iOS safe-area utilities, custom xs breakpoint.",
+      "reason": "Not requested; outside animal detail card/page UI scope.",
+      "evidence": [
+        "frontend-file-summaries.txt (index.css description)"
+      ]
+    },
+    {
+      "description": "LoginScreen and ProfileSetup safe-area/responsive/loading/error-handling changes.",
+      "reason": "Not requested; outside animal detail card/page UI scope.",
+      "evidence": [
+        "frontend-file-summaries.txt (LoginScreen.tsx description)",
+        "frontend-file-summaries.txt (ProfileSetup.tsx description)"
+      ]
+    },
+    {
+      "description": "Bulk dialogs UI changes (e.g., BulkAddMealsDialog scrollable animal list, other bulk dialog layout changes).",
+      "reason": "Not requested and explicitly constrained to not modify bulk action workflows/UI.",
+      "evidence": [
+        "frontend-file-summaries.txt (BulkAddMealsDialog.tsx description)",
+        "frontend-file-summaries.txt (BulkAddWeightsDialog.tsx description - truncated)"
+      ]
+    }
+  ],
+  "confidence": 0.68,
+  "changed_files": [
+    "backend/main.mo",
+    "frontend-file-summaries.txt",
+    "frontend/src/components/AnimalCard.tsx",
+    "frontend/src/components/EditShedTubChangeDialog.tsx",
+    "frontend/src/components/ShedTubChangeList.tsx",
+    "frontend/src/hooks/useQueries.ts",
+    "project_state.json"
+  ]
+}
